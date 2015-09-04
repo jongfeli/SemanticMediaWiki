@@ -199,6 +199,8 @@ class SPARQLStore extends Store {
 			new RedirectLookup( $this->getConnection() )
 		);
 
+		$turtleTriplesBuilder->setTriplesChunkSize( 80 );
+
 		if ( !$turtleTriplesBuilder->hasTriplesForUpdate() ) {
 			return;
 		}
@@ -207,10 +209,12 @@ class SPARQLStore extends Store {
 			$this->doSparqlDataDelete( $semanticData->getSubject() );
 		}
 
-		$this->getConnection()->insertData(
-			$turtleTriplesBuilder->getTriples(),
-			$turtleTriplesBuilder->getPrefixes()
-		);
+		foreach( $turtleTriplesBuilder->getChunkedTriples() as $chunkedTriples ) {
+			$this->getConnection()->insertData(
+				$chunkedTriples,
+				$turtleTriplesBuilder->getPrefixes()
+			);
+		}
 	}
 
 	/**
